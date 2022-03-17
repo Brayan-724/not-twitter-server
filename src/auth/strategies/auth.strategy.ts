@@ -68,7 +68,7 @@ export class AuthStrategy {
 
   generateToken<R extends boolean = false>(payload: JWTPayload<R>) {
     return this.jwtService.sign(payload, {
-      expiresIn: (payload.refresh ? 5 : 10) + 'm',
+      expiresIn: '7d',
     });
   }
 
@@ -141,17 +141,17 @@ export class AuthStrategy {
     access_token: string,
     refresh_token: string,
   ): Promise<CookieTokens | null> {
-    const isValidToken = await this.validateRefreshToken(
-      access_token,
-      refresh_token,
-    );
+    // const isValidToken = await this.validateRefreshToken(
+    //   access_token,
+    //   refresh_token,
+    // );
 
-    if (!isValidToken) {
-      return null;
-    }
+    // if (!isValidToken) {
+    //   return null;
+    // }
 
     const oldPayload = this.jwtService.decode(
-      access_token,
+      refresh_token,
     ) as JWTPayload<false>;
 
     return this.login(oldPayload);

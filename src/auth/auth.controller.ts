@@ -13,13 +13,13 @@ export class AuthController {
     res.cookie('not_twitter_token', tokens.access_token, {
       httpOnly: true,
       sameSite: 'strict',
-      expires: new Date(Date.now() + 1000 * 60 * 5),
+      expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 1.5),
     });
 
     res.cookie('not_twitter_refresh', tokens.refresh_token, {
       httpOnly: true,
       sameSite: 'strict',
-      expires: new Date(Date.now() + 1000 * 60 * 10),
+      expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5),
     });
   }
 
@@ -44,7 +44,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     if (
-      !req?.cookies?.not_twitter_token ||
+      // !req?.cookies?.not_twitter_token ||
       !req?.cookies?.not_twitter_refresh
     ) {
       res.status(401);
