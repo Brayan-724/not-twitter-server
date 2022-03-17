@@ -43,16 +43,12 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    if (
-      // !req?.cookies?.not_twitter_token ||
-      !req?.cookies?.not_twitter_refresh
-    ) {
+    if (!req?.cookies?.not_twitter_refresh) {
       res.status(401);
       return { access_token: null, refresh_token: null };
     }
 
     const access_token = await this.authService.refresh(
-      req.cookies.not_twitter_token,
       req.cookies.not_twitter_refresh,
     );
 

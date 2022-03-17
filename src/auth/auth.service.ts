@@ -21,14 +21,8 @@ export class AuthService {
     return payload;
   }
 
-  async refresh(
-    access_token: string,
-    refresh_token: string,
-  ): Promise<CookieTokens | null> {
-    const payload = await this.authStrategy.refreshToken(
-      access_token,
-      refresh_token,
-    );
+  async refresh(refresh_token: string): Promise<CookieTokens | null> {
+    const payload = await this.authStrategy.refreshToken(refresh_token);
 
     return payload;
   }

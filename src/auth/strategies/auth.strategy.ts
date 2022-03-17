@@ -137,19 +137,7 @@ export class AuthStrategy {
     return true;
   }
 
-  async refreshToken(
-    access_token: string,
-    refresh_token: string,
-  ): Promise<CookieTokens | null> {
-    // const isValidToken = await this.validateRefreshToken(
-    //   access_token,
-    //   refresh_token,
-    // );
-
-    // if (!isValidToken) {
-    //   return null;
-    // }
-
+  async refreshToken(refresh_token: string): Promise<CookieTokens | null> {
     const oldPayload = this.jwtService.decode(
       refresh_token,
     ) as JWTPayload<false>;
