@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { Toxic } from '@prisma/client';
+import { Request } from 'express';
 import { CookieTokens } from './interfaces/cookie-tokens.interface';
 import { AuthStrategy } from './strategies/auth.strategy';
 
@@ -21,9 +23,25 @@ export class AuthService {
     return payload;
   }
 
+  async register(data: Toxic): Promise<CookieTokens | null> {
+    const toxic = await this.authStrategy.register(data);
+
+    if (!toxic) {
+      return null;
+    }
+
+    return toxic;
+  }
+
   async refresh(refresh_token: string): Promise<CookieTokens | null> {
     const payload = await this.authStrategy.refreshToken(refresh_token);
 
     return payload;
+  }
+
+  async me(req: Request): Promise<Toxic | null> {
+    const toxic = await this.authStrategy.me(req);
+
+    return toxic;
   }
 }

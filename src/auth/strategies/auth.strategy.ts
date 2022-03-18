@@ -1,14 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Toxic } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
+import { Request } from 'express';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CookieTokens } from '../interfaces/cookie-tokens.interface';
 import { JWTPayload } from '../interfaces/jwt-payload.interface';
 
 @Injectable()
 export class AuthStrategy {
-  private readonly saltRounds = 10;
+  private readonly cryptoHashSecret = process.env.JWT_SECRET as string;
 
   constructor(
     private readonly prismaService: PrismaService,
@@ -23,8 +24,6 @@ export class AuthStrategy {
       return null;
     }
 
-    const passwordHash = await this.generateHash(username, password);
-
     const toxic = await this.prismaService.getPrisma().toxic.findFirst({
       where: {
         username,
@@ -35,7 +34,11 @@ export class AuthStrategy {
       return null;
     }
 
-    const isValid = await this.compareHash(toxic, passwordHash);
+    const isValid = await this.compareHash(
+      toxic.username,
+      password,
+      toxic.password,
+    );
 
     if (!isValid) {
       return null;
@@ -66,6 +69,36 @@ export class AuthStrategy {
     };
   }
 
+  async register(data: Toxic): Promise<CookieTokens | null> {
+    try {
+      const hasAlreadyToxic = await this.prismaService
+        .getPrisma()
+        .toxic.findFirst({
+          where: {
+            username: data.username,
+          },
+        });
+
+      if (hasAlreadyToxic) {
+        return null;
+      }
+
+      const toxic = await this.prismaService.getPrisma().toxic.create({
+        data: {
+          ...data,
+          password: await this.generateHash(data.username, data.password),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
+
+      return this.login(toxic);
+    } catch (error) {
+      console.error(error);
+      return null;
+    }
+  }
+
   generateToken<R extends boolean = false>(payload: JWTPayload<R>) {
     return this.jwtService.sign(payload, {
       expiresIn: '7d',
@@ -77,10 +110,10 @@ export class AuthStrategy {
   }
 
   async generateHash(username: string, password: string) {
-    const hash = await bcrypt.hash(
-      this.generateToHash(username, password),
-      this.saltRounds,
-    );
+    const hash = crypto
+      .createHmac('sha256', this.cryptoHashSecret)
+      .update(this.generateToHash(username, password))
+      .digest('base64');
 
     return hash;
   }
@@ -104,10 +137,9 @@ export class AuthStrategy {
         ? ({ username: usernameOrToxic, password: passwordOrHash } as Toxic)
         : usernameOrToxic;
 
-    const isValid = await bcrypt.compare(
-      this.generateToHash(toxic.username, toxic.password),
-      hash,
-    );
+    const hashed = await this.generateHash(toxic.username, toxic.password);
+
+    const isValid = hash === hashed;
 
     return isValid;
   }
@@ -143,5 +175,27 @@ export class AuthStrategy {
     ) as JWTPayload<false>;
 
     return this.login(oldPayload);
+  }
+
+  async me(req: Request): Promise<Toxic | null> {
+    const jwtToken = req?.cookies?.not_twitter_token as string | undefined;
+
+    if (!jwtToken) {
+      return null;
+    }
+
+    const payload = this.jwtService.decode(jwtToken) as JWTPayload<false>;
+
+    if (!payload) {
+      return null;
+    }
+
+    const toxic = await this.prismaService.getPrisma().toxic.findUnique({
+      where: {
+        id: payload.id,
+      },
+    });
+
+    return toxic;
   }
 }
