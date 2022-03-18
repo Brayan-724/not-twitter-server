@@ -25,10 +25,22 @@ model Toxic {
 }
 
 model Tweet {
-  id        String   @id @unique @default(auto()) @map("_id") @db.ObjectId
-  content   String
-  toxic     Toxic    @relation(references: [id], fields: [toxicId])
-  toxicId   String   @db.ObjectId
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  id         String          @id @unique @default(auto()) @map("_id") @db.ObjectId
+  parent     Tweet?          @relation(name: "TweetComment", references: [id], fields: [parentId], onDelete: NoAction, onUpdate: NoAction)
+  parentId   String?         @db.ObjectId
+  content    String
+  visibility TweetVisibility @default(PUBLIC)
+  comments   Tweet[]         @relation(name: "TweetComment")
+  retweets   Int             @default(0)
+  likes      Int             @default(0)
+  toxic      Toxic           @relation(references: [id], fields: [toxicId])
+  toxicId    String          @db.ObjectId
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @default(now())
+}
+
+enum TweetVisibility {
+  PUBLIC
+  PRIVATE
+  HIDDEN
 }
