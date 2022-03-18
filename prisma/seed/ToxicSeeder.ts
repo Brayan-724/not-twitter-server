@@ -74,9 +74,16 @@ export class ToxicSeeder
 
     // Create all toxics in parallel
     return await Promise.all(
-      toxics.map((toxic) =>
-        this.prisma.getPrisma().toxic.create({ data: toxic }),
-      ),
+      toxics.map(async (toxic) => {
+        const passwordHash = await this.authStrategy.generateHash(
+          toxic.username,
+          toxic.password,
+        );
+
+        return this.prisma
+          .getPrisma()
+          .toxic.create({ data: { ...toxic, password: passwordHash } });
+      }),
     );
   }
 
