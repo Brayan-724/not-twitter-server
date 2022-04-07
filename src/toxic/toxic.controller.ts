@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { TweetService } from '../tweet/tweet.service';
 import { ToxicService } from './toxic.service';
 
@@ -15,12 +15,12 @@ export class ToxicController {
   }
 
   @Get('/:id')
-  public async findOne(id: string) {
+  public async findOne(@Param('id') id: string) {
     return this.toxicService.findOne(id);
   }
 
   @Get('/:id/tweets')
-  public async findByToxic(id: string) {
+  public async findByToxic(@Param('id') id: string) {
     return this.tweetService.findByToxic(id);
   }
 }
