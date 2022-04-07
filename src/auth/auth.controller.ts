@@ -75,6 +75,11 @@ export class AuthController {
       return { error: 'username and password are required' };
     }
 
+    if (username.toLowerCase() !== username) {
+      res.status(400);
+      return { error: 'username must be in lowercase' };
+    }
+
     if (username.length < 4) {
       res.status(400);
       return { error: 'Username must be at least 4 characters long' };
