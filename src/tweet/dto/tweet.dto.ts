@@ -1,4 +1,11 @@
 export class TweetDto {
-  toxicId: string;
   content: string;
+  visibility?: TweetVisibility;
+  toxicId: string;
+}
+
+export enum TweetVisibility {
+  PRIVATE = 'PRIVATE',
+  PUBLIC = 'PUBLIC',
+  HIDDEN = 'HIDDEN',
 }
