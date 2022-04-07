@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Tweet } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { TweetDto } from './dto/tweet.dto';
+import { TweetDto, TweetVisibility } from './dto/tweet.dto';
+import { TweetFilters } from './interface/tweet-filters.interface';
 
 @Injectable()
 export class TweetService {
@@ -29,12 +30,12 @@ export class TweetService {
     const newTweet = await this.prismaService.getPrisma().tweet.create({
       data: {
         content: tweet.content,
-        // toxicId: tweet.toxicId,
         toxic: {
           connect: {
             id: tweet.toxicId,
           },
         },
+        visibility: tweet.visibility,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -48,7 +49,7 @@ export class TweetService {
   }
 
   async findOne(id: string): Promise<Tweet> {
-    return await this.prismaService.getPrisma().tweet.findFirst({
+    return await this.prismaService.getPrisma().tweet.findUnique({
       where: { id },
     });
   }
@@ -56,11 +57,30 @@ export class TweetService {
   async findByToxic(toxicId: string): Promise<Tweet[]> {
     return await this.prismaService.getPrisma().tweet.findMany({
       where: {
-        toxic: {
-          id: toxicId,
-        },
+        toxicId: toxicId,
       },
     });
+  }
+
+  async findWithFilters(filters: TweetFilters): Promise<Tweet[] | null> {
+    const { quantity = 50, toxicId, visibility } = filters;
+
+    const where = {
+      toxicId: toxicId,
+      visibility: visibility,
+    };
+
+    try {
+      const tweets = await this.prismaService.getPrisma().tweet.findMany({
+        where,
+        take: quantity,
+      });
+
+      return tweets;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
   }
 
   async delete(id: string): Promise<void> {
@@ -97,5 +117,13 @@ export class TweetService {
     }
 
     return null;
+  }
+
+  validateTweetVisiblity(visibility: TweetVisibility): boolean {
+    return (
+      visibility === TweetVisibility.PRIVATE ||
+      visibility === TweetVisibility.PUBLIC ||
+      visibility === TweetVisibility.HIDDEN
+    );
   }
 }
