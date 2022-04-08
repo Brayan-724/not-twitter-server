@@ -1,15 +1,16 @@
 import { Module } from '@nestjs/common';
-import { PassportModule } from '@nestjs/passport';
+
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { LocalStrategy } from './strategies/local.strategy';
 import { AuthStrategy } from './strategies/auth.strategy';
-import { PrismaModule } from '../prisma/prisma.module';
-import { PrismaService } from '../prisma/prisma.service';
-import { LocalAuthGuard } from './guards/local-auth.guard';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtModule, JwtService } from '@nestjs/jwt';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { LocalAuthGuard } from './guards/local-auth.guard';
+import { LocalStrategy } from './strategies/local.strategy';
+import { PassportModule } from '@nestjs/passport';
+import { PrismaModule } from '../prisma/prisma.module';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Module({
   imports: [
@@ -21,13 +22,13 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
   ],
   controllers: [AuthController],
   providers: [
-    PrismaService,
     AuthService,
     AuthStrategy,
-    LocalStrategy,
-    LocalAuthGuard,
-    JwtStrategy,
     JwtAuthGuard,
+    JwtStrategy,
+    LocalAuthGuard,
+    LocalStrategy,
+    PrismaService,
   ],
   exports: [AuthService, AuthStrategy, JwtAuthGuard],
 })
