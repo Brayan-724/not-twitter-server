@@ -3,6 +3,8 @@ import { Toxic } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuthStrategy } from './auth.strategy';
 
+jest.setTimeout(10000);
+
 const prismaService = new PrismaService();
 const jwtService = new JwtService({
   secret: process.env.JWT_SECRET as string,
@@ -11,8 +13,11 @@ const jwtService = new JwtService({
 describe('AuthStrategy', () => {
   let instance: AuthStrategy;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     await prismaService.onModuleInit();
+  });
+
+  beforeEach(() => {
     instance = new AuthStrategy(prismaService, jwtService);
   });
 
