@@ -27,6 +27,7 @@ export class TweetController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
+    console.log(req.cookies);
     // Take my data if I'm logged in
     const me = await this.authService.me(req);
 
@@ -46,11 +47,10 @@ export class TweetController {
     return tweets
       .map((tweet) => {
         // If the tweet is public or it's mine, return the whole tweet
-        if (tweet.visibility === TweetVisibility.PUBLIC) {
-          return tweet;
-        }
-
-        if (tweet.toxicId === me.id) {
+        if (
+          tweet.visibility === TweetVisibility.PUBLIC ||
+          tweet.toxicId === me?.id
+        ) {
           return tweet;
         }
 
@@ -71,6 +71,7 @@ export class TweetController {
     return this.tweetService.findOne(id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete('/:id')
   public delete(@Param('id') id: string) {
     this.tweetService.delete(id);

@@ -1,6 +1,6 @@
 import { JwtService } from '@nestjs/jwt';
-import { AuthStrategy } from '../src/auth/strategies/auth.strategy';
-import { PrismaService } from '../src/prisma/prisma.service';
+import { AuthStrategy } from '../src/modules/auth/strategies/auth.strategy';
+import { PrismaService } from '../src/modules/prisma/prisma.service';
 import { ToxicSeeder } from './seed/ToxicSeeder';
 import { TweetSeeder } from './seed/TweetSeeder';
 

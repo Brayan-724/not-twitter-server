@@ -1,6 +1,6 @@
 import { Toxic, Tweet } from '@prisma/client';
-import { AuthStrategy } from 'src/auth/strategies/auth.strategy';
-import { PrismaService } from '../../src/prisma/prisma.service';
+import { AuthStrategy } from '../../src/modules/auth/strategies/auth.strategy';
+import { PrismaService } from '../../src/modules/prisma/prisma.service';
 
 export interface SeederMethods<T extends Toxic | Tweet> {
   clearTable(): Promise<void>;

@@ -65,14 +65,15 @@ export class TweetService {
   async findWithFilters(filters: TweetFilters): Promise<Tweet[] | null> {
     const { quantity = 50, toxicId, visibility } = filters;
 
-    const where = {
-      toxicId: toxicId,
-      visibility: visibility,
-    };
+    const where = {};
+    if (toxicId) where['toxicId'] = toxicId;
+    if (visibility) where['visibility'] = visibility;
 
     try {
       const tweets = await this.prismaService.getPrisma().tweet.findMany({
-        where,
+        where: {
+          ...where,
+        },
         take: quantity,
       });
 

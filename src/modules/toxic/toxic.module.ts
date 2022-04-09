@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { PrismaModule } from 'src/prisma/prisma.module';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { TweetModule } from 'src/tweet/tweet.module';
-import { TweetService } from 'src/tweet/tweet.service';
+import { PrismaModule } from '../prisma/prisma.module';
+import { PrismaService } from '../prisma/prisma.service';
+import { TweetModule } from '../tweet/tweet.module';
+import { TweetService } from '../tweet/tweet.service';
 import { ToxicController } from './toxic.controller';
 import { ToxicService } from './toxic.service';
 
