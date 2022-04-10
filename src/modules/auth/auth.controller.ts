@@ -1,14 +1,13 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Req,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { Toxic } from '@prisma/client';
 import { Request, Response } from 'express';
+import {
+  BodyValidator,
+  GlobalValidator,
+  NumberCaseValidator,
+  PartValidator,
+  StringCaseValidator,
+} from 'src/utils/BodyValidator/index';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
@@ -16,7 +15,60 @@ import { CookieTokens } from './interfaces/cookie-tokens.interface';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  private registerValidator = new BodyValidator();
+
+  constructor(private readonly authService: AuthService) {
+    this.registerValidator
+      .getPart(
+        new PartValidator('username').isRequired().case(
+          new StringCaseValidator()
+            .isRequired()
+            .minLength(4)
+            .maxLength(15)
+            .isLowerCase(true)
+            .regex(
+              /^[a-z0-9_]+$/,
+              'Username can only contain lowercase letters and numbers',
+            ),
+        ),
+      )
+      .getPart(
+        new PartValidator('password')
+          .isRequired()
+          .case(
+            new StringCaseValidator().isRequired().minLength(8).maxLength(33),
+          ),
+      )
+      .getPart(
+        new PartValidator('name')
+          .isRequired()
+          .case(
+            new StringCaseValidator().isRequired().minLength(4).maxLength(20),
+          ),
+      )
+      .getPart(
+        new PartValidator('email').isRequired().case(
+          new StringCaseValidator()
+            .isRequired()
+            .minLength(4)
+            .maxLength(50)
+            .regex(
+              /^(\w|\.){3,}@[a-z]{3,}(\.[a-z]{2,})+$/,
+              'Invalid email format',
+            ),
+        ),
+      )
+      .getPart(
+        new PartValidator('description')
+          .globalCase(new GlobalValidator().default(''))
+          .case(new StringCaseValidator()),
+      )
+      .getPart(
+        new PartValidator('birthday').case(
+          new NumberCaseValidator().min(1000000),
+        ),
+      );
+  }
 
   private useAccessToken(res: Response, tokens: CookieTokens) {
     res.cookie('not_twitter_token', tokens.access_token, {
@@ -62,51 +114,27 @@ export class AuthController {
   async register(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-
-    @Body('username') username: string,
-    @Body('password') password: string,
-    @Body('email') email: string,
-    @Body('name') name: string,
-    @Body('description') description: string,
-    @Body('birthday') birthday: number,
   ) {
-    if (!username || !password) {
+    const validation = this.registerValidator.validate(req);
+
+    if (validation[0] === false) {
       res.status(400);
-      return { error: 'username and password are required' };
+      return {
+        statusCode: 400,
+        message: validation[1].toString(),
+        details: validation[1].getDetails(),
+      };
     }
 
-    if (username.toLowerCase() !== username) {
-      res.status(400);
-      return { error: 'username must be in lowercase' };
-    }
-
-    if (username.length < 4) {
-      res.status(400);
-      return { error: 'Username must be at least 4 characters long' };
-    }
-
-    if (username.length > 15) {
-      res.status(400);
-      return { error: 'Username must be less than 15 characters long' };
-    }
-
-    if (password.length < 8) {
-      res.status(400);
-      return { error: 'Password must be at least 8 characters long' };
-    }
-
-    if (password.length > 33) {
-      res.status(400);
-      return { error: 'Password must be less than 33 characters long' };
-    }
+    const body = validation[1] as any;
 
     const access_token = await this.authService.register({
-      name,
-      username,
-      password,
-      email,
-      description,
-      birthday,
+      name: body.name,
+      username: body.username,
+      password: body.password,
+      email: body.email,
+      description: body.description,
+      birthday: body.birthday,
     } as unknown as Toxic);
 
     if (access_token) {
