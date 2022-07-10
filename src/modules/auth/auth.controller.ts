@@ -1,74 +1,21 @@
 import { Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { Toxic } from '@prisma/client';
 import { Request, Response } from 'express';
-import {
-  BodyValidator,
-  GlobalValidator,
-  NumberCaseValidator,
-  PartValidator,
-  StringCaseValidator,
-} from 'src/utils/BodyValidator/index';
+import { UseValidator } from 'src/utils/BodyValidator/useValidator.decorator';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { CookieTokens } from './interfaces/cookie-tokens.interface';
+import { LoginValidator } from './validators/login.validator';
+import { RegisterUserDto } from './validators/register.dto';
+import { RegisterValidator } from './validators/register.validator';
 
 @Controller('auth')
 export class AuthController {
-  private registerValidator = new BodyValidator();
+  private registerValidator = new RegisterValidator();
+  private loginValidator = new LoginValidator();
 
-  constructor(private readonly authService: AuthService) {
-    this.registerValidator
-      .getPart(
-        new PartValidator('username').isRequired().case(
-          new StringCaseValidator()
-            .isRequired()
-            .minLength(4)
-            .maxLength(15)
-            .isLowerCase(true)
-            .regex(
-              /^[a-z0-9_]+$/,
-              'Username can only contain lowercase letters and numbers',
-            ),
-        ),
-      )
-      .getPart(
-        new PartValidator('password')
-          .isRequired()
-          .case(
-            new StringCaseValidator().isRequired().minLength(8).maxLength(33),
-          ),
-      )
-      .getPart(
-        new PartValidator('name')
-          .isRequired()
-          .case(
-            new StringCaseValidator().isRequired().minLength(4).maxLength(20),
-          ),
-      )
-      .getPart(
-        new PartValidator('email').isRequired().case(
-          new StringCaseValidator()
-            .isRequired()
-            .minLength(4)
-            .maxLength(50)
-            .regex(
-              /^(\w|\.){3,}@[a-z]{3,}(\.[a-z]{2,})+$/,
-              'Invalid email format',
-            ),
-        ),
-      )
-      .getPart(
-        new PartValidator('description')
-          .globalCase(new GlobalValidator().default(''))
-          .case(new StringCaseValidator()),
-      )
-      .getPart(
-        new PartValidator('birthday').case(
-          new NumberCaseValidator().min(1000000),
-        ),
-      );
-  }
+  constructor(private readonly authService: AuthService) {}
 
   private useAccessToken(res: Response, tokens: CookieTokens) {
     res.cookie('not_twitter_token', tokens.access_token, {
@@ -87,6 +34,12 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @Post('login')
   async login(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const validation = this.loginValidator.validate(req);
+
+    if (validation[0] === false) {
+      return validation[1].toApiErrorResponse();
+    }
+
     const access_token = await this.authService.login(
       req.body.username,
       req.body.password,
@@ -114,20 +67,8 @@ export class AuthController {
   async register(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
+    @UseValidator(new RegisterValidator()) body: RegisterUserDto,
   ) {
-    const validation = this.registerValidator.validate(req);
-
-    if (validation[0] === false) {
-      res.status(400);
-      return {
-        statusCode: 400,
-        message: validation[1].toString(),
-        details: validation[1].getDetails(),
-      };
-    }
-
-    const body = validation[1] as any;
-
     const access_token = await this.authService.register({
       name: body.name,
       username: body.username,

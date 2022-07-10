@@ -43,7 +43,7 @@ export class CaseModifiers<
 
     for (const modifierKey of modifierKeys) {
       if (
-        modifiers.values[modifierKey] === null &&
+        modifiers.values[modifierKey] !== null &&
         this.values[modifierKey] === null
       ) {
         this.values[modifierKey] = modifiers.values[modifierKey];

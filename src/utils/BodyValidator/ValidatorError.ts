@@ -13,4 +13,12 @@ export class ValidatorError {
   getDetails(): ValidatorErrorOptions {
     return this.options;
   }
+
+  toApiErrorResponse() {
+    return {
+      statusCode: 400,
+      message: this.toString(),
+      detail: this.getDetails(),
+    };
+  }
 }
